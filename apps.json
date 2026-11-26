@@ -1,0 +1,31 @@
+{
+  "repo": {
+    "url": "https://fdroid.kyc.rip/repo",
+    "name": "kyc.rip F-Droid Repository",
+    "description": "Official F-Droid repository for kyc.rip privacy & Monero Android apps (XMRadar, Ripley Vault, and more). Signed APKs built in public CI from open-source repositories — zero Google Play Services, zero Firebase, zero trackers."
+  },
+  "apps": [
+    {
+      "appId": "rip.kyc.xmradar",
+      "name": "XMRadar",
+      "repo": "KYC-rip/xmradar",
+      "apkPattern": "^xmradar-\\d+\\.\\d+\\.\\d+(?:\\.\\d+)?-arm64-v8a\\.apk$",
+      "license": "GPL-3.0-or-later",
+      "categories": [
+        "Internet",
+        "Money",
+        "Security"
+      ],
+      "antiFeatures": [
+        "NonFreeNet"
+      ],
+      "webSite": "https://xmradar.app",
+      "sourceCode": "https://github.com/KYC-rip/xmradar",
+      "issueTracker": "https://github.com/KYC-rip/xmradar/issues",
+      "changelog": "https://github.com/KYC-rip/xmradar/blob/main/CHANGELOG.md",
+      "donate": "https://pwa.cash/s/xbtoshi",
+      "metadataDir": "metadata/rip.kyc.xmradar",
+      "keepReleases": 3
+    }
+  ]
+}

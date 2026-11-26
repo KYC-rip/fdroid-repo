@@ -1,0 +1,21 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "kyc-rip-fdroid",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-26",
+  "observability": {
+    "enabled": true
+  },
+  "routes": [
+    {
+      "pattern": "fdroid.kyc.rip",
+      "custom_domain": true
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "REPO_BUCKET",
+      "bucket_name": "kyc-rip-fdroid"
+    }
+  ]
+}

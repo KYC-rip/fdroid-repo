@@ -1,0 +1,117 @@
+name: Publish F-Droid Repository
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [app-release]
+  schedule:
+    - cron: '0 */6 * * *'
+
+concurrency:
+  group: fdroid-kyc-rip-publish
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    environment: release
+    steps:
+      - name: Checkout fdroid-repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Install fdroidserver, Java, Android tools, and AWS CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            fdroidserver \
+            openjdk-21-jre-headless \
+            apksigner \
+            aapt \
+            python3-qrcode \
+            awscli
+
+      - name: Pull existing repo/ from Cloudflare R2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          mkdir -p repo
+          aws s3 sync "s3://${R2_BUCKET}/repo/" repo/ \
+            --endpoint-url "${R2_ENDPOINT}" \
+            --only-show-errors || true
+
+      - name: Sync signed APKs and metadata from GitHub Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -I scripts/sync_apps.py
+
+      - name: Configure fdroidserver and sign index
+        env:
+          FDROID_KEYSTORE_BASE64: ${{ secrets.FDROID_KEYSTORE_BASE64 }}
+          FDROID_KEYSTORE_PASS: ${{ secrets.FDROID_KEYSTORE_PASS }}
+          FDROID_KEY_ALIAS: ${{ secrets.FDROID_KEY_ALIAS }}
+          FDROID_KEY_PASS: ${{ secrets.FDROID_KEY_PASS }}
+        run: |
+          set -euo pipefail
+          KS_PATH="${RUNNER_TEMP}/fdroid-repo.keystore"
+          printf '%s' "$FDROID_KEYSTORE_BASE64" | base64 -d > "$KS_PATH"
+          chmod 600 "$KS_PATH"
+
+          python3 - "$KS_PATH" <<'PY'
+          import os, pathlib, sys
+          tpl = pathlib.Path("config.yml.template").read_text(encoding="utf-8")
+          out = (
+              tpl.replace("__KEYSTORE_PATH__", sys.argv[1])
+                 .replace("__KEY_ALIAS__", os.environ["FDROID_KEY_ALIAS"])
+                 .replace("__KEYSTORE_PASS__", os.environ["FDROID_KEYSTORE_PASS"])
+                 .replace("__KEY_PASS__", os.environ["FDROID_KEY_PASS"])
+          )
+          pathlib.Path("config.yml").write_text(out, encoding="utf-8")
+          os.chmod("config.yml", 0o600)
+          PY
+
+          fdroid update --create-metadata --verbose
+          test -s repo/index-v2.json
+          test -s repo/entry.jar
+
+          FP=$(keytool -list -v -keystore "$KS_PATH" -storepass "$FDROID_KEYSTORE_PASS" -alias "$FDROID_KEY_ALIAS" \
+            | awk '/SHA256:/ {gsub(/:/, "", $2); print $2; exit}')
+          echo "FINGERPRINT=${FP}" >> "$GITHUB_ENV"
+          echo "Repo SHA-256 fingerprint: ${FP}"
+
+      - name: Build fdroid.kyc.rip landing page
+        run: python3 -I scripts/build_landing.py --fingerprint "$FINGERPRINT"
+
+      - name: Upload repo/ and index.html to Cloudflare R2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          # Phase 1: upload new APKs and assets before overwriting indexes so clients never hit 404.
+          aws s3 sync repo/ "s3://${R2_BUCKET}/repo/" \
+            --endpoint-url "${R2_ENDPOINT}" \
+            --exclude "index-v*" --exclude "entry.*" \
+            --only-show-errors
+          # Phase 2: upload signed indexes and prune stale APKs.
+          aws s3 sync repo/ "s3://${R2_BUCKET}/repo/" \
+            --endpoint-url "${R2_ENDPOINT}" \
+            --delete \
+            --only-show-errors
+          # Phase 3: upload landing page.
+          aws s3 cp public/index.html "s3://${R2_BUCKET}/index.html" \
+            --endpoint-url "${R2_ENDPOINT}" \
+            --content-type "text/html; charset=utf-8" \
+            --only-show-errors
+
+      - name: Scrub temporary signing files
+        if: always()
+        run: rm -f "${RUNNER_TEMP}/fdroid-repo.keystore" config.yml

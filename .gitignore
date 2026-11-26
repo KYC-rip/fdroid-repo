@@ -1,0 +1,16 @@
+# Generated F-Droid build artifacts & secrets (never commit)
+repo/
+archive/
+metadata/
+tmp/
+public/
+config.yml
+*.keystore
+*.jks
+*.p12
+*.apk
+__pycache__/
+*.pyc
+.DS_Store
+worker/.wrangler/
+worker/node_modules/

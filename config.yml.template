@@ -1,0 +1,16 @@
+# Template used by CI (.github/workflows/publish.yml) to generate config.yml with signing secrets.
+repo_url: "https://fdroid.kyc.rip/repo"
+repo_name: "kyc.rip F-Droid Repository"
+repo_icon: "repo-icon.png"
+repo_description: >-
+  Official F-Droid repository for kyc.rip privacy & Monero Android apps
+  (XMRadar, Ripley Vault, and more). Signed APKs built in public CI from
+  open-source repositories — zero Google Play Services, zero Firebase, zero trackers.
+
+archive_older: 0
+make_current_version_link: false
+keystore: "__KEYSTORE_PATH__"
+repo_keyalias: "__KEY_ALIAS__"
+keystorepass: "__KEYSTORE_PASS__"
+keypass: "__KEY_PASS__"
+keydname: "CN=fdroid.kyc.rip, OU=kyc.rip, O=kyc.rip, L=Cyberspace, S=Cyberspace, C=XX"
