@@ -22,15 +22,19 @@ jobs:
       - name: Checkout fdroid-repo
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
-      - name: Install fdroidserver, JDK, and Android tools
+      - name: Install fdroidserver (latest), JDK, and Android tools
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            fdroidserver \
             openjdk-21-jdk-headless \
             apksigner \
             aapt \
-            python3-qrcode
+            python3-venv \
+            rsync
+          python3 -m venv "${RUNNER_TEMP}/fdroid-venv"
+          "${RUNNER_TEMP}/fdroid-venv/bin/pip" install --upgrade pip fdroidserver qrcode
+          echo "${RUNNER_TEMP}/fdroid-venv/bin" >> "$GITHUB_PATH"
+          "${RUNNER_TEMP}/fdroid-venv/bin/fdroid" --version
           aws --version
 
       - name: Pull existing repo/ from Cloudflare R2
@@ -88,7 +92,7 @@ jobs:
           echo "Repo SHA-256 fingerprint: ${FP}"
 
       - name: Build fdroid.kyc.rip landing page
-        run: python3 -I scripts/build_landing.py --fingerprint "$FINGERPRINT"
+        run: "${RUNNER_TEMP}/fdroid-venv/bin/python" -I scripts/build_landing.py --fingerprint "$FINGERPRINT"
 
       - name: Upload repo/ and index.html to Cloudflare R2
         env:
