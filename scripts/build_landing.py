@@ -137,17 +137,84 @@ def render_html(repo_url: str, fingerprint: str, apps: list[dict]) -> str:
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f5f6f9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d0f14" media="(prefers-color-scheme: dark)">
 <title>kyc.rip F-Droid Repository</title>
 <meta name="description" content="Official F-Droid repository for kyc.rip privacy & Monero Android apps (XMRadar, Ripley Vault, and more).">
 <style>
   :root {{
-    --bg: #0c0d11; --card: #15171f; --border: #262936; --fg: #eceef4;
-    --muted: #98a0b3; --accent: #8b5cf6; --xmr: #f26822; --ok: #22c55e;
+    color-scheme: light dark;
+    --bg-light: #f5f6f9; --bg-dark: #0d0f14;
+    --card-light: #ffffff; --card-dark: #151822;
+    --code-bg-light: #eef0f5; --code-bg-dark: #0b0c10;
+    --code-fg-light: #1b2030; --code-fg-dark: #dbe2f0;
+    --border-light: #dde1eb; --border-dark: #242836;
+    --border-hi-light: #c5ccd9; --border-hi-dark: #343b50;
+    --fg-light: #141720; --fg-dark: #eef0f6;
+    --summary-light: #333a4d; --summary-dark: #d5dae6;
+    --muted-light: #586074; --muted-dark: #939bb0;
+    --accent-light: #6d28d9; --accent-dark: #7c3aed;
+    --xmr-light: #c2410c; --xmr-dark: #f26822;
+    --ok-light: #15734b; --ok-dark: #34d399;
+    --ok-soft-light: rgba(21,115,75,.10); --ok-soft-dark: rgba(52,211,153,.12);
+    --shadow-light: 0 1px 3px rgba(20,23,32,.06); --shadow-dark: none;
+
+    --bg: var(--bg-light);
+    --card: var(--card-light);
+    --code-bg: var(--code-bg-light);
+    --code-fg: var(--code-fg-light);
+    --border: var(--border-light);
+    --border-hi: var(--border-hi-light);
+    --fg: var(--fg-light);
+    --summary: var(--summary-light);
+    --muted: var(--muted-light);
+    --accent: var(--accent-light);
+    --xmr: var(--xmr-light);
+    --ok: var(--ok-light);
+    --ok-soft: var(--ok-soft-light);
+    --shadow: var(--shadow-light);
+  }}
+  @media (prefers-color-scheme: dark) {{
+    :root {{
+      --bg: var(--bg-dark);
+      --card: var(--card-dark);
+      --code-bg: var(--code-bg-dark);
+      --code-fg: var(--code-fg-dark);
+      --border: var(--border-dark);
+      --border-hi: var(--border-hi-dark);
+      --fg: var(--fg-dark);
+      --summary: var(--summary-dark);
+      --muted: var(--muted-dark);
+      --accent: var(--accent-dark);
+      --xmr: var(--xmr-dark);
+      --ok: var(--ok-dark);
+      --ok-soft: var(--ok-soft-dark);
+      --shadow: var(--shadow-dark);
+    }}
+  }}
+  @supports (color: light-dark(white, black)) {{
+    :root {{
+      --bg: light-dark(var(--bg-light), var(--bg-dark));
+      --card: light-dark(var(--card-light), var(--card-dark));
+      --code-bg: light-dark(var(--code-bg-light), var(--code-bg-dark));
+      --code-fg: light-dark(var(--code-fg-light), var(--code-fg-dark));
+      --border: light-dark(var(--border-light), var(--border-dark));
+      --border-hi: light-dark(var(--border-hi-light), var(--border-hi-dark));
+      --fg: light-dark(var(--fg-light), var(--fg-dark));
+      --summary: light-dark(var(--summary-light), var(--summary-dark));
+      --muted: light-dark(var(--muted-light), var(--muted-dark));
+      --accent: light-dark(var(--accent-light), var(--accent-dark));
+      --xmr: light-dark(var(--xmr-light), var(--xmr-dark));
+      --ok: light-dark(var(--ok-light), var(--ok-dark));
+      --ok-soft: light-dark(var(--ok-soft-light), var(--ok-soft-dark));
+    }}
   }}
   * {{ box-sizing: border-box; }}
   body {{
     margin: 0; font: 15px/1.55 system-ui, -apple-system, sans-serif;
-    background: var(--bg); color: var(--fg);
+    background: var(--bg); color: var(--fg); accent-color: var(--accent);
+    -webkit-font-smoothing: antialiased;
   }}
   main {{ max-width: 820px; margin: 0 auto; padding: 36px 20px 64px; }}
   header {{ display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }}
@@ -159,12 +226,13 @@ def render_html(repo_url: str, fingerprint: str, apps: list[dict]) -> str:
   .mono {{ font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }}
   .hero-card {{
     display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: center;
-    background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 22px;
+    background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+    padding: 22px; box-shadow: var(--shadow);
   }}
   @media (max-width: 640px) {{ .hero-card {{ grid-template-columns: 1fr; }} }}
   .qr-box {{
-    background: #ffffff; padding: 12px; border-radius: 12px; width: 176px; height: 176px;
-    display: grid; place-items: center; justify-self: center;
+    background: #ffffff; border: 1px solid var(--border); padding: 12px; border-radius: 12px;
+    width: 176px; height: 176px; display: grid; place-items: center; justify-self: center;
   }}
   .qr-box svg {{ width: 100%; height: 100%; display: block; }}
   .cta-row {{ display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0; }}
@@ -173,16 +241,19 @@ def render_html(repo_url: str, fingerprint: str, apps: list[dict]) -> str:
     border-radius: 10px; text-decoration: none; font-weight: 700; font-size: 14px;
     background: var(--accent); color: #fff;
   }}
+  .btn:hover {{ filter: brightness(1.06); }}
   .btn.secondary {{ background: transparent; border: 1px solid var(--border); color: var(--fg); }}
+  .btn.secondary:hover, .btn-sm:hover {{ border-color: var(--border-hi); }}
+  a:focus-visible {{ outline: 2px solid var(--accent); outline-offset: 2px; }}
   .kv {{ display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }}
   .kv code {{
-    display: block; padding: 8px 10px; border-radius: 8px; background: #0b0c10;
-    border: 1px solid var(--border); word-break: break-all; color: #dbe2f0;
+    display: block; padding: 8px 10px; border-radius: 8px; background: var(--code-bg);
+    border: 1px solid var(--border); word-break: break-all; color: var(--code-fg);
   }}
   .apps {{ display: grid; gap: 14px; }}
   .app-card {{
     background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px;
-    display: flex; flex-direction: column; gap: 12px;
+    display: flex; flex-direction: column; gap: 12px; box-shadow: var(--shadow);
   }}
   .app-head {{ display: flex; gap: 14px; align-items: center; }}
   .app-icon {{ width: 48px; height: 48px; border-radius: 12px; object-fit: cover; flex: none; }}
@@ -191,10 +262,10 @@ def render_html(repo_url: str, fingerprint: str, apps: list[dict]) -> str:
   }}
   .app-head h3 {{ margin: 0 0 2px; font-size: 17px; }}
   .ver {{
-    font-size: 12px; font-weight: 600; color: var(--ok); background: rgba(34,197,94,.12);
+    font-size: 12px; font-weight: 600; color: var(--ok); background: var(--ok-soft);
     padding: 2px 7px; border-radius: 999px; margin-left: 6px;
   }}
-  .summary {{ color: #d5dae6; font-size: 14px; }}
+  .summary {{ color: var(--summary); font-size: 14px; }}
   .app-links {{ display: flex; flex-wrap: wrap; gap: 8px; }}
   .btn-sm {{
     display: inline-flex; align-items: center; padding: 7px 12px; border-radius: 8px;
@@ -202,8 +273,10 @@ def render_html(repo_url: str, fingerprint: str, apps: list[dict]) -> str:
     border: 1px solid var(--border); color: var(--fg);
   }}
   .btn-sm.primary {{ background: var(--xmr); border-color: var(--xmr); color: #fff; }}
+  .btn-sm.primary:hover {{ filter: brightness(1.06); }}
   footer {{ margin-top: 40px; font-size: 13px; color: var(--muted); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }}
   footer a {{ color: var(--muted); }}
+  footer a:hover {{ color: var(--fg); }}
 </style>
 </head>
 <body>
