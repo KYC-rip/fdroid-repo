@@ -26,6 +26,27 @@
       "donate": "https://pwa.cash/s/xbtoshi",
       "metadataDir": "metadata/rip.kyc.xmradar",
       "keepReleases": 3
+    },
+    {
+      "appId": "run.ripley.terminal",
+      "name": "Ripley Terminal",
+      "repo": "KYC-rip/ripley-terminal",
+      "apkPattern": "^Ripley\\.Terminal_\\d+\\.\\d+\\.\\d+_android-arm64\\.apk$",
+      "license": "MIT",
+      "categories": [
+        "Money",
+        "Security",
+        "Internet"
+      ],
+      "antiFeatures": [
+        "NonFreeNet"
+      ],
+      "webSite": "https://ripley.run/terminal",
+      "sourceCode": "https://github.com/KYC-rip/ripley-terminal",
+      "issueTracker": "https://github.com/KYC-rip/ripley-terminal/issues",
+      "donate": "https://pwa.cash/s/xbtoshi",
+      "metadataDir": "metadata/run.ripley.terminal",
+      "keepReleases": 3
     }
   ]
 }
