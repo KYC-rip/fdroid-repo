@@ -86,6 +86,51 @@ jobs:
           test -s repo/index-v2.json
           test -s repo/entry.jar
 
+          # Ensure every icon/graphic path referenced by index-v2.json exists on disk
+          # (fdroidserver sometimes leaves Fastlane icon.png unrenamed while index-v2.json
+          # references icon_<urlsafe-b64-sha256>.png). Verify exact sha256 match.
+          python3 - <<'PY'
+          import hashlib, json, pathlib, shutil
+
+          repo = pathlib.Path("repo")
+          idx = json.loads((repo / "index-v2.json").read_text(encoding="utf-8"))
+
+          def sha256(p: pathlib.Path) -> str:
+              return hashlib.sha256(p.read_bytes()).hexdigest()
+
+          def ensure_file(entry: dict) -> None:
+              if not isinstance(entry, dict) or not entry.get("name"):
+                  return
+              rel = entry["name"].lstrip("/")
+              target = repo / rel
+              if target.is_file():
+                  return
+              want_sha = entry.get("sha256")
+              # Look in the same directory for a sibling file with the exact sha256 (e.g. icon.png)
+              if target.parent.is_dir():
+                  for cand in target.parent.iterdir():
+                      if cand.is_file() and (not want_sha or sha256(cand) == want_sha):
+                          shutil.copy2(cand, target)
+                          print(f"[fix-asset] materialized {rel} from {cand.name}")
+                          return
+              raise SystemExit(f"Missing repo asset referenced by index-v2.json: {rel}")
+
+          for pkg in (idx.get("packages") or {}).values():
+              meta = pkg.get("metadata") or {}
+              for field in ("icon", "featureGraphic", "promoGraphic", "tvBanner"):
+                  val = meta.get(field)
+                  if isinstance(val, dict):
+                      for loc_entry in val.values():
+                          ensure_file(loc_entry)
+              for ss_group in (meta.get("screenshots") or {}).values():
+                  if isinstance(ss_group, dict):
+                      for items in ss_group.values():
+                          if isinstance(items, list):
+                              for item in items:
+                                  ensure_file(item)
+          print("[ok] all index-v2.json graphic assets verified on disk")
+          PY
+
           FP=$(keytool -list -v -keystore "$KS_PATH" -storepass "$FDROID_KEYSTORE_PASS" -alias "$FDROID_KEY_ALIAS" \
             | awk '/SHA256:/ {gsub(/:/, "", $2); print $2; exit}')
           echo "FINGERPRINT=${FP}" >> "$GITHUB_ENV"
